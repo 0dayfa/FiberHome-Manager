@@ -96,17 +96,20 @@ PCC_FIELDS = ["pccType","pccBand","pccPci","pccArfcn","pccDlBandWidth",
 def get_ca(client: RouterClient) -> dict:
     """Returns {'pcc1', 'pcc2', 'sccs', 'count', 'lte_scc_n', 'nr_scc_n', 'ts'}.
 
-    IMPORTANT: SCCInfos array is STALE — firmware does not clear it when SCCs
-    deactivate. The authoritative live counts live in get_header_info:
-        LTE_sccNumbers / NR_sccNumbers.
-    Callers MUST trim the sccs list to those counts (or hide entirely if 0)
-    instead of trusting SCC_State on stale rows.
+    Returns ALL SCCs the firmware reports — callers filter by SCC_State
+    ('actived'/'activated' = live, 'deactivated' = stale).  The router's
+    own web UI reads SCC_State the same way, so we mirror that path.
+
+    Earlier versions trimmed by header_info.{LTE,NR}_sccNumbers, but those
+    counters can desync (return 0 even when SCCs are actively carrying
+    traffic) — silently hiding live SCCs. SCC_State is reliable.
+
     Uses $multipost — same single-roundtrip path the router web UI uses."""
     pcc1_q = {f: f"X_FH_MobileNetwork.NetworkInfo.PCCInfo.{f}" for f in PCC_FIELDS}
     pcc2_q = {f: f"X_FH_MobileNetwork.NetworkInfo.PCCInfo2.{f}" for f in PCC_FIELDS}
     scc_q = {
         "url": "X_FH_MobileNetwork.NetworkInfo.SCCInfos.",
-        "num": 4,
+        "num": 8,
         "node": {
             "SCC_Type": "sccType", "SCC_State": "sccState",
             "SCC_Band": "sccBand", "SCC_Pci": "sccPci",
@@ -134,8 +137,8 @@ def get_ca(client: RouterClient) -> dict:
     pcc2     = bundle.get("data_2") or {}
     scc_resp = bundle.get("data_3") or {}
     cnt_resp = bundle.get("data_4") or {}
-    # Header info has the AUTHORITATIVE live SCC counts (firmware leaves
-    # SCCInfos populated with stale rows after carriers go inactive).
+    # Header counters kept for debugging only — caller no longer uses them
+    # to filter, since they're unreliable.
     header   = client._post_api("get_header_info", timeout=5) or {}
     if not isinstance(header, dict): header = {}
 
@@ -143,21 +146,11 @@ def get_ca(client: RouterClient) -> dict:
     lte_n = int(header.get("LTE_sccNumbers", 0) or 0)
     nr_n  = int(header.get("NR_sccNumbers",  0) or 0)
 
-    # Trim SCCInfos by authoritative counts. Keep order, take first N of each type.
-    lte_kept, nr_kept = [], []
-    for s in sccs_all:
-        t = str(s.get("SCC_Type", "") or "").upper()
-        if "LTE" in t and len(lte_kept) < lte_n:
-            lte_kept.append(s)
-        elif "NR" in t and len(nr_kept) < nr_n:
-            nr_kept.append(s)
-    live_sccs = lte_kept + nr_kept
-
     return {
         "pcc1":      pcc1 if isinstance(pcc1, dict) else {},
         "pcc2":      pcc2 if isinstance(pcc2, dict) else {},
-        "sccs":      live_sccs,         # already trimmed to live count
-        "sccs_raw":  sccs_all,          # unfiltered (in case a caller wants stale)
+        "sccs":      sccs_all,          # ALL — filter downstream by SCC_State
+        "sccs_raw":  sccs_all,
         "count":     int((cnt_resp or {}).get("sccNumbers", 0) or 0),
         "lte_scc_n": lte_n,
         "nr_scc_n":  nr_n,
