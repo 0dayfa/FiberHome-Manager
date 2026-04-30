@@ -42,6 +42,7 @@ _archive/
 build_output.log
 *.tmp
 
-# stray screenshots
+# stray screenshots — but keep README docs and bundled assets
 *.png
 !shared/assets/*.png
+!docs/screenshots/*.png

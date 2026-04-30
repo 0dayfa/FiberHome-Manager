@@ -10,6 +10,8 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D4?logo=windows&logoColor=white)](#)
 [![License](https://img.shields.io/badge/License-Personal_use-orange.svg)](#license)
 
+![Main dashboard](docs/screenshots/main.png)
+
 </div>
 
 ---
@@ -91,6 +93,14 @@ speed tests, and IP scanning.
 | **Settings** | LAN/IPv4 · Wi-Fi (SSID-1/2 + passwords) · Firewall · ALG + UPnP · TR-069/ACS · admin password · Reboot/Factory Reset |
 | **IP Scan** | Live WAN/Public IP monitor · IP changer via airplane mode · hidden Fast.com speed test · pattern-based IP pinning · sortable speed-stats table |
 | **AT Command** | Raw AT command console + 11 presets (ATI, AT+CSQ, AT+QENG, ...) |
+
+<div align="center">
+
+![IP Scan with hidden Fast.com speed test](docs/screenshots/speed-test.png)
+
+*IP Scan tab — live IP monitor + Fast.com speed test rendered in a hidden Chromium pane.*
+
+</div>
 
 **Extras**:
 - 🌗 Three themes: Light · Dark (Tokyo Night) · Aurora — switches live
