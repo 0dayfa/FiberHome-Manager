@@ -15,7 +15,7 @@ _current = "en"
 STRINGS = {
     # ───── Top bar ─────
     "Main":            {"en": "Main",            "ar": "الرئيسيه"},
-    "Band Select":     {"en": "Band + Cell",     "ar": "التردد + البرج"},
+    "Band Select":     {"en": "Band",             "ar": "التردد"},
     "Advance":         {"en": "Advance",         "ar": "متقدم"},
     "Settings":        {"en": "Settings",        "ar": "الإعدادات"},
     "Restart Router":  {"en": "Restart Router",  "ar": "إعاده تشغيل الرواتر"},
@@ -222,6 +222,31 @@ STRINGS = {
     "Cell deleted":       {"en": "Cell deleted",     "ar": "تم حذف البرج"},
     "Confirm delete":     {"en": "Delete this cell from the lock list?",
                             "ar": "حذف هذا البرج من قائمه القفل؟"},
+
+    # ───── Neighbour Cells card ─────
+    "Neighbour Cells":   {"en": "Neighbour Cells",
+                            "ar": "الأبراج المجاوره"},
+    "Neighbour Sub":     {"en": "Live scan of nearby towers — pick one to lock the modem to it instantly",
+                            "ar": "مسح لحظي للأبراج القريبه — اختر برج وأقفل عليه بضغطه"},
+    "EARFCN":            {"en": "EARFCN",          "ar": "EARFCN"},
+    "Band":              {"en": "Band",            "ar": "التردد"},
+    "RSRP":              {"en": "RSRP",            "ar": "RSRP"},
+    "SINR":              {"en": "SINR",            "ar": "SINR"},
+    "Lock":              {"en": "🔒  Lock",        "ar": "🔒  قفل"},
+    "Lock to this":      {"en": "Lock to this",    "ar": "قفل على هذا"},
+    "No neighbours":     {"en": "No neighbour cells reported yet — modem hasn't scanned the surroundings.",
+                            "ar": "ما طلعت أبراج مجاوره لحد الحين — المودم ما مسح المحيط بعد."},
+    "LIVE":              {"en": "● LIVE",          "ar": "● مباشر"},
+    "neighbours found":  {"en": "neighbours found",
+                            "ar": "برج مجاور"},
+    "Confirm cell lock": {"en": "Lock the modem to this cell?",
+                            "ar": "تأكيد قفل المودم على هذا البرج؟"},
+    "Cell lock auto enable": {"en": "Cell Lock is currently disabled — enable it after adding?",
+                                 "ar": "قفل البرج معطّل حالياً — تفعيله بعد الإضافه؟"},
+    "Cell already locked": {"en": "This cell is already in the lock list.",
+                                "ar": "هذا البرج موجود بالفعل في قائمه القفل."},
+    "Cell locked toast":  {"en": "Cell added to lock list — modem will reset briefly.",
+                                "ar": "تم إضافه البرج لقائمه القفل — سيُعاد تشغيل المودم لحظياً."},
 
     # ───── AT Command page ─────
     "AT Command":         {"en": "AT Command",       "ar": "أوامر AT"},

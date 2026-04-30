@@ -10,8 +10,6 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D4?logo=windows&logoColor=white)](#)
 [![License](https://img.shields.io/badge/License-Personal_use-orange.svg)](#license)
 
-![Main dashboard](docs/screenshots/main.png)
-
 </div>
 
 ---
@@ -20,19 +18,23 @@
 
 ## 🌍 العربي
 
-### وش هو؟
+برنامج **فايبر هوم مانجير** (تجريبي) — حطيت بعض الأشياء لتسهيل الاستخدام، أتمنى يعجبكم.
 
-**FiberHome Manager** برنامج كمبيوتر يدير راوتر **FiberHome LG6851F**
-(الموديم 5G من Quectel RG620T). يحط محل صفحه الرواتر `192.168.8.1` اللي
-بطيئه ومالها فايده — ويعطيك واجهه أسرع بكثير: قراءات إشاره لحظيه، تحكم
-بالترددات، تغيير الـ IP، اختبار سرعه، وكل شي تحتاجه بضغطه.
+<div align="center">
+
+![لوحه التحكّم الرئيسيه](docs/screenshots/main.png)
+
+![تبويب IP Scan مع Fast.com](docs/screenshots/speed-test.png)
+
+</div>
 
 ### وش يسوي؟
 
 <table dir="rtl">
 <tr><th>الصفحه</th><th>المحتوى</th></tr>
 <tr><td><b>Main</b></td><td>قراءات لحظيه (RSRP/RSRQ/SINR/RSSI) للـ 4G والـ 5G · رسوم بيانيه ملوّنه · جدول CA · إحصائيات الانترنت · حاله الجهاز</td></tr>
-<tr><td><b>Band + Cell</b></td><td>قفل ترددات LTE/NR متعدّده · قفل برج محدّد بـ ARFCN و PCI · يمنع التعارض بينها تلقائي</td></tr>
+<tr><td><b>Band</b></td><td>قفل ترددات LTE/NR متعدّده — تختار الباندات وتطبّق</td></tr>
+<tr><td><b>Neighbour Cells</b></td><td>🆕 جدول لحظي للأبراج المجاوره (PCI · EARFCN · RSRP · SINR ملوّنه حسب الإشاره) + زر <b>قفل</b> لكل صف يضيف البرج لقائمه Cell Lock مباشره — كل شي من نفس الصفحه</td></tr>
 <tr><td><b>Advance</b></td><td>وضع الطيران بضغطه · Network Mode + 5G Option · التجوال · Carrier Aggregation · هوائي 5G خارجي · SMS · VoLTE · حد بيانات يومي/شهري</td></tr>
 <tr><td><b>Settings</b></td><td>LAN/IPv4 · Wi-Fi (SSID-1/2) · Firewall · ALG + UPnP · TR-069/ACS · تغيير باسوورد المشرف · إعاده تشغيل / Factory Reset</td></tr>
 <tr><td><b>IP Scan</b></td><td>مراقبه WAN و Public IP لحظياً · تغيير الـ IP عن طريق وضع الطيران · Speed Test مخفي يجيب الأرقام من Fast.com · IP Pinning بأنماط · جدول السرعات</td></tr>
@@ -97,19 +99,12 @@ speed tests, and IP scanning.
 | Page | Content |
 |---|---|
 | **Main** | Live RSRP/RSRQ/SINR/RSSI for 4G + 5G · color-zone charts · CA table · traffic stats · system gauges |
-| **Band + Cell** | Multi-band LTE/NR lock · single-cell lock by ARFCN+PCI · automatic mutual-exclusion enforcement |
+| **Band** | Multi-band LTE/NR lock — pick bands and apply |
+| **Neighbour Cells** | 🆕 Live table of detected neighbour cells (PCI · EARFCN · RSRP · SINR with signal-quality colouring) + per-row **Lock** button that pushes the cell directly into the Cell Lock list — full smart-lock workflow on one page |
 | **Advance** | Airplane toggle · Network Mode + 5G Option · Roaming · Carrier Aggregation · 5G NR external antenna · SMS · VoLTE · daily/monthly traffic limits |
 | **Settings** | LAN/IPv4 · Wi-Fi (SSID-1/2 + passwords) · Firewall · ALG + UPnP · TR-069/ACS · admin password · Reboot/Factory Reset |
 | **IP Scan** | Live WAN/Public IP monitor · IP changer via airplane mode · hidden Fast.com speed test · pattern-based IP pinning · sortable speed-stats table |
 | **AT Command** | Raw AT command console + 11 presets (ATI, AT+CSQ, AT+QENG, ...) |
-
-<div align="center">
-
-![IP Scan with hidden Fast.com speed test](docs/screenshots/speed-test.png)
-
-*IP Scan tab — live IP monitor + Fast.com speed test rendered in a hidden Chromium pane.*
-
-</div>
 
 **Extras**:
 - 🌗 Three themes: Light · Dark (Tokyo Night) · Aurora — switches live

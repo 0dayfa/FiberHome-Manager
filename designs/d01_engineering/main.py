@@ -192,7 +192,7 @@ class EngWindow(QMainWindow):
         self._top_group = QButtonGroup(self); self._top_group.setExclusive(True)
 
         # Tab buttons (translated)
-        tab_keys = ["Main","Band Select","Advance","Settings","IP Scan","AT Command"]
+        tab_keys = ["Main","Band Select","Neighbour Cells","Advance","Settings","IP Scan","AT Command"]
         for key in tab_keys:
             b = QPushButton(i18n.s(key)); b.setObjectName("topbtn")
             b.setCheckable(True)
@@ -202,6 +202,7 @@ class EngWindow(QMainWindow):
         self._top_btns["Main"].setChecked(True)
         self._top_btns["Main"].clicked.connect(lambda: self._show_view("main"))
         self._top_btns["Band Select"].clicked.connect(lambda: self._show_view("band"))
+        self._top_btns["Neighbour Cells"].clicked.connect(lambda: self._show_view("neighbour"))
         self._top_btns["Advance"].clicked.connect(lambda: self._show_view("advance"))
         self._top_btns["Settings"].clicked.connect(lambda: self._show_view("settings"))
         self._top_btns["IP Scan"].clicked.connect(lambda: self._show_view("ipscan"))
@@ -273,6 +274,10 @@ class EngWindow(QMainWindow):
         # Build band-select page
         self.page_band = self._build_band_page()
         self.view_stack.addWidget(self.page_band)
+
+        # Build neighbour-cells page (neighbour table + cell lock)
+        self.page_neighbour = self._build_neighbour_page()
+        self.view_stack.addWidget(self.page_neighbour)
 
         # Build advance page
         self.page_advance = self._build_advance_page()
@@ -757,7 +762,15 @@ class EngWindow(QMainWindow):
             self.view_stack.setCurrentWidget(self.page_band)
             self._top_btns["Band Select"].setChecked(True)
             QTimer.singleShot(150, self._band_refresh)
-            QTimer.singleShot(160, self._cell_refresh)
+        elif name == "neighbour":
+            self.view_stack.setCurrentWidget(self.page_neighbour)
+            self._top_btns["Neighbour Cells"].setChecked(True)
+            QTimer.singleShot(150, self._cell_refresh)
+            # Repaint the neighbour table immediately from the cached state
+            # so the user sees something the moment they switch — without
+            # waiting for the next radio tick (~1.5s).
+            try: self._fill_neighbour_table(self.hub.state.get("_neighbors") or [])
+            except Exception: pass
         elif name == "advance":
             self.view_stack.setCurrentWidget(self.page_advance)
             self._top_btns["Advance"].setChecked(True)
@@ -908,9 +921,288 @@ class EngWindow(QMainWindow):
             ar.addWidget(b)
         lay.addWidget(action)
 
-        # ── Cell Lock section (below Band Lock, same page) ──
-        lay.addWidget(self._build_cell_lock_section(t, acc_lte, acc_nr))
         return page
+
+    # ────────────────────── Neighbour Cells page (own tab) ──────────────────────
+    def _build_neighbour_page(self):
+        """Dedicated tab — Neighbour Cells table on top, Cell Lock below.
+        Splitting the old 'Band + Cell' tab in two: this page is for the
+        smart-lock workflow (see a tower → click Lock → it lands in the
+        Cell Lock list right underneath)."""
+        t = theme_mod.t
+        acc_lte = t("accent")
+        acc_nr  = t("ok") if theme_mod.current() == "light" else t("accent_2")
+
+        page = QWidget()
+        page.setStyleSheet(f"QWidget {{ background:{t('bg')}; }}")
+        # Wrap in a scroll area — the Neighbour table can grow tall on
+        # busy cells, and Cell Lock keeps its full footprint underneath.
+        scroll = QScrollArea(); scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet(f"QScrollArea {{ background:{t('bg')}; border:none; }}")
+        inner = QWidget()
+        lay = QVBoxLayout(inner); lay.setContentsMargins(12, 8, 12, 8); lay.setSpacing(10)
+
+        # Equal stretch — Cell Lock needs as much room as the neighbour
+        # table so its locked-cells list, Add Cell form, and action bar
+        # all stay visible on standard windows without scrolling.
+        lay.addWidget(self._build_neighbour_cells_section(t, acc_lte, acc_nr), 1)
+        lay.addWidget(self._build_cell_lock_section(t, acc_lte, acc_nr), 1)
+
+        scroll.setWidget(inner)
+        outer = QVBoxLayout(page); outer.setContentsMargins(0, 0, 0, 0); outer.setSpacing(0)
+        outer.addWidget(scroll)
+        return page
+
+    # ────────────────────── Neighbour Cells section ──────────────────────
+    def _build_neighbour_cells_section(self, t, acc_lte, acc_nr):
+        """Live table of detected neighbour cells (parsed from
+        EARFCN_NBR/RSRP_NBR/PCI_NBR/BAND_NBR/SINR_NBR), with an inline
+        Lock button per row that pushes the (act,arfcn,pci) into
+        LockCellList.LockCell — the same path Cell Lock uses."""
+        hero = QFrame(); hero.setObjectName("ad_hero")
+        hl = QVBoxLayout(hero); hl.setContentsMargins(28, 18, 28, 18); hl.setSpacing(8)
+
+        # Title row: icon + title/subtitle + live badge
+        ttl_row = QHBoxLayout()
+        ico = QLabel("📡")
+        ico.setStyleSheet("color:" + acc_lte + "; font-size:22px; background:transparent;")
+        box = QVBoxLayout(); box.setSpacing(0)
+        ti = QLabel(i18n.s("Neighbour Cells"))
+        ti.setStyleSheet(f"color:{acc_lte}; font-size:22px; font-weight:bold; "
+                          "letter-spacing:1px; background:transparent;")
+        sub = QLabel(i18n.s("Neighbour Sub"))
+        sub.setStyleSheet(f"color:{t('fg_mute')}; font-size:11px; "
+                           "background:transparent;")
+        box.addWidget(ti); box.addWidget(sub)
+        ttl_row.addWidget(ico); ttl_row.addSpacing(10); ttl_row.addLayout(box)
+        ttl_row.addStretch()
+
+        self._nb_count_chip = QLabel(f"0  {i18n.s('neighbours found')}")
+        self._nb_count_chip.setStyleSheet(
+            f"color:{acc_lte}; font-size:11px; font-weight:bold; letter-spacing:1px; "
+            f"padding:6px 14px; background:{t('accent_bg')}; "
+            f"border:1px solid {acc_lte}; border-radius:14px;")
+        ttl_row.addWidget(self._nb_count_chip)
+
+        self._nb_live_chip = QLabel(i18n.s("LIVE"))
+        self._nb_live_chip.setStyleSheet(
+            f"color:{t('ok')}; font-size:11px; font-weight:bold; letter-spacing:2px; "
+            f"padding:6px 14px; background:{t('ok_bg')}; "
+            f"border:1px solid {t('ok')}; border-radius:14px;")
+        ttl_row.addWidget(self._nb_live_chip)
+        hl.addLayout(ttl_row)
+
+        sep = QFrame(); sep.setFixedHeight(1); sep.setStyleSheet(f"background:{t('border_lt')};")
+        hl.addWidget(sep)
+
+        # Table: Band | PCI | EARFCN | RSRP | SINR | Action
+        self._nb_table = QTableWidget(0, 6)
+        self._nb_table.setHorizontalHeaderLabels([
+            i18n.s("Band"), i18n.s("PCI"), i18n.s("EARFCN"),
+            i18n.s("RSRP"), i18n.s("SINR"), i18n.s("Action")])
+        self._nb_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self._nb_table.horizontalHeader().setDefaultAlignment(Qt.AlignCenter)
+        self._nb_table.verticalHeader().setVisible(False)
+        self._nb_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self._nb_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        # Modest min height — fits ~5 rows + header. Equal stretch with
+        # Cell Lock below means we shouldn't hog the page; the table will
+        # grow naturally on tall windows.
+        self._nb_table.setMinimumHeight(240)
+        self._nb_table.setStyleSheet(
+            f"QTableWidget {{ background:{t('card')}; color:{t('fg')}; "
+            f"gridline-color:{t('border_lt')}; "
+            f"alternate-background-color:{t('card_alt')}; "
+            f"selection-background-color:{t('accent_bg')}; selection-color:{t('fg')}; }}"
+            f"QHeaderView::section {{ background:{t('card_alt')}; color:{t('fg')}; "
+            f"border:1px solid {t('border')}; padding:6px; font-weight:bold; }}")
+        self._nb_table.setAlternatingRowColors(True)
+        self._nb_table.verticalHeader().setDefaultSectionSize(46)
+        self._nb_table.verticalHeader().setMinimumSectionSize(46)
+        hl.addWidget(self._nb_table)
+
+        return hero
+
+    @staticmethod
+    def _nb_act_from_band(band_str: str) -> str | None:
+        """'B3' → '1' (LTE),  'N78' → '2' (NR).  Returns None on garbage."""
+        s = (band_str or "").strip().upper()
+        if not s: return None
+        if s.startswith("B"): return "1"
+        if s.startswith("N"): return "2"
+        return None
+
+    @staticmethod
+    def _nb_signal_color(t, val, kind):
+        """Same thresholds used elsewhere for RSRP/SINR — returns a bg colour."""
+        try: v = float(val)
+        except Exception: return t("card_alt")
+        if kind == "rsrp":
+            return (t("ok_bg")  if v >= -90  else
+                    t("warn_bg") if v >= -100 else
+                    t("err_bg"))
+        if kind == "sinr":
+            return (t("ok_bg")  if v >= 13 else
+                    t("warn_bg") if v >= 0  else
+                    t("err_bg"))
+        return t("card_alt")
+
+    def _fill_neighbour_table(self, neighbours):
+        """Render the neighbour list — called from _on_data each radio tick."""
+        if not hasattr(self, "_nb_table"): return
+        t = theme_mod.t
+        try: self._nb_table.clearSpans()
+        except Exception: pass
+        rows = neighbours or []
+        # Sort by RSRP desc — strongest signal first
+        def _rsrp_key(r):
+            try: return -float(r.get("rsrp"))
+            except Exception: return 1e9
+        rows = sorted(rows, key=_rsrp_key)
+
+        self._nb_count_chip.setText(f"{len(rows)}  {i18n.s('neighbours found')}")
+
+        if not rows:
+            self._nb_table.setRowCount(1)
+            empty = QTableWidgetItem(i18n.s("No neighbours"))
+            empty.setTextAlignment(Qt.AlignCenter)
+            empty.setForeground(QColor(t("fg_mute")))
+            self._nb_table.setItem(0, 0, empty)
+            self._nb_table.setSpan(0, 0, 1, 6)
+            return
+
+        lte_color = t("accent")
+        nr_color  = t("ok") if theme_mod.current() == "light" else t("accent_2")
+
+        self._nb_table.setRowCount(len(rows))
+        for r, n in enumerate(rows):
+            self._nb_table.setRowHeight(r, 46)
+            band   = str(n.get("band", "") or "—")
+            pci    = str(n.get("pci",  "") or "—")
+            earfcn = str(n.get("earfcn","") or "—")
+            rsrp   = str(n.get("rsrp", "") or "—")
+            sinr   = str(n.get("sinr", "") or "—")
+
+            act = self._nb_act_from_band(band)
+
+            # Band cell — coloured by tech
+            band_it = QTableWidgetItem(band if band != "" else "—")
+            band_it.setTextAlignment(Qt.AlignCenter)
+            band_color = lte_color if act == "1" else (nr_color if act == "2" else t("fg"))
+            band_it.setForeground(QColor(band_color))
+            f = QFont(); f.setBold(True); band_it.setFont(f)
+            self._nb_table.setItem(r, 0, band_it)
+
+            # PCI / EARFCN
+            for c, val in enumerate([pci, earfcn], start=1):
+                it = QTableWidgetItem(val); it.setTextAlignment(Qt.AlignCenter)
+                self._nb_table.setItem(r, c, it)
+
+            # RSRP — coloured background tile
+            rsrp_it = QTableWidgetItem(f"{rsrp} dBm" if rsrp != "—" else "—")
+            rsrp_it.setTextAlignment(Qt.AlignCenter)
+            rsrp_it.setBackground(QColor(self._nb_signal_color(t, rsrp, "rsrp")))
+            self._nb_table.setItem(r, 3, rsrp_it)
+
+            # SINR — coloured background tile
+            sinr_it = QTableWidgetItem(f"{sinr} dB" if sinr != "—" else "—")
+            sinr_it.setTextAlignment(Qt.AlignCenter)
+            sinr_it.setBackground(QColor(self._nb_signal_color(t, sinr, "sinr")))
+            self._nb_table.setItem(r, 4, sinr_it)
+
+            # Lock button — disabled if EARFCN/PCI/band is missing
+            can_lock = (act in ("1","2")
+                         and earfcn not in ("","—")
+                         and pci    not in ("","—"))
+            lock_btn = QPushButton(i18n.s("Lock"))
+            lock_btn.setCursor(Qt.PointingHandCursor)
+            lock_btn.setFixedHeight(30)
+            lock_btn.setMinimumWidth(110)
+            lf = QFont("Segoe UI", 10); lf.setBold(True)
+            lock_btn.setFont(lf)
+            btn_bg = lte_color if act == "1" else nr_color
+            if can_lock:
+                lock_btn.setStyleSheet(
+                    f"QPushButton {{ background:{btn_bg}; color:#FFFFFF; "
+                    f"border:none; border-radius:6px; padding:0 14px; }}"
+                    f"QPushButton:hover {{ background:{btn_bg}; opacity:0.85; }}")
+                lock_btn.clicked.connect(
+                    lambda _=False, a=act, ar=earfcn, pc=pci, bd=band:
+                        self._neighbour_lock_one(a, ar, pc, bd))
+            else:
+                lock_btn.setEnabled(False)
+                lock_btn.setStyleSheet(
+                    f"QPushButton {{ background:{t('card_alt')}; color:{t('fg_mute')}; "
+                    f"border:1px solid {t('border')}; border-radius:6px; padding:0 14px; }}")
+
+            cell_w = QWidget()
+            cell_w.setAttribute(Qt.WA_TranslucentBackground, True)
+            cell_w.setStyleSheet("background:transparent;")
+            cw = QHBoxLayout(cell_w)
+            cw.setContentsMargins(0, 0, 0, 0); cw.setSpacing(0)
+            cw.addStretch(); cw.addWidget(lock_btn, 0, Qt.AlignVCenter); cw.addStretch()
+            self._nb_table.setCellWidget(r, 5, cell_w)
+
+    def _neighbour_lock_one(self, act: str, earfcn_s: str, pci_s: str, band: str):
+        """Confirm + push (act,arfcn,pci) into the cell-lock list, optionally
+        enabling cell lock if it's currently off."""
+        try:
+            arfcn = int(str(earfcn_s).strip())
+            pci   = int(str(pci_s).strip())
+        except Exception:
+            QMessageBox.warning(self, i18n.s("Lock"),
+                                  "ARFCN / PCI invalid for this neighbour row.")
+            return
+        if not (0 <= arfcn <= 875000) or not (0 <= pci <= 1007):
+            QMessageBox.warning(self, i18n.s("Lock"),
+                                  "ARFCN must be 0–875000 and PCI 0–1007.")
+            return
+        tech = "4G LTE" if act == "1" else "5G NR"
+        msg = (f"{i18n.s('Confirm cell lock')}\n\n"
+               f"  {i18n.s('Tech')}  : {tech}\n"
+               f"  {i18n.s('Band')}  : {band}\n"
+               f"  {i18n.s('ARFCN')} : {arfcn}\n"
+               f"  {i18n.s('PCI')}   : {pci}")
+        if QMessageBox.question(self, i18n.s("Lock"), msg,
+                                  QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+            return
+        try:
+            # Skip if already in the list (best-effort, off-thread is overkill)
+            try:
+                cur = rapi.get_cell_lock(self.hub.client) or {}
+                already = any(int(c.get("arfcn", -1) or -1) == arfcn
+                                and int(c.get("pci", -1) or -1) == pci
+                                for c in (cur.get("cells") or []))
+            except Exception:
+                cur, already = {}, False
+
+            if already:
+                QMessageBox.information(self, i18n.s("Lock"),
+                                          i18n.s("Cell already locked"))
+            else:
+                rapi.add_cell_lock_entry(self.hub.client, act, arfcn, pci)
+
+            # If cell lock is currently off, offer to flip it on. Mutually
+            # exclusive with band lock — refuse politely if band lock is on.
+            cell_on = bool(cur.get("enable"))
+            band_on = bool(cur.get("band_lock_enable"))
+            if not cell_on and not band_on:
+                if QMessageBox.question(self, i18n.s("Cell Lock"),
+                                          i18n.s("Cell lock auto enable"),
+                                          QMessageBox.Yes | QMessageBox.No
+                                          ) == QMessageBox.Yes:
+                    rapi.set_cell_lock_enable(self.hub.client, True)
+            elif band_on:
+                QMessageBox.warning(self, i18n.s("Cell Lock"),
+                                      i18n.s("Mutex warn"))
+
+            QMessageBox.information(self, i18n.s("Lock"),
+                                      i18n.s("Cell locked toast"))
+            QTimer.singleShot(700, self._cell_refresh)
+            QTimer.singleShot(700, self._band_refresh)
+        except Exception as e:
+            QMessageBox.critical(self, i18n.s("Lock"), str(e))
 
     # ────────────────────── Cell Lock section ──────────────────────
     def _build_cell_lock_section(self, t, acc_lte, acc_nr):
@@ -1490,6 +1782,12 @@ class EngWindow(QMainWindow):
                 if v not in (None, ""):
                     try: zc.addPoint(v)
                     except Exception: pass
+
+            # ── Live neighbour cells table ──
+            try:
+                self._fill_neighbour_table(st.get("_neighbors") or [])
+            except Exception:
+                pass
         except Exception:
             pass
 
