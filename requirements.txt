@@ -1,0 +1,5 @@
+# Python dependencies for BUILDING FiberHome Manager - Beta.
+# End users do NOT need these — the produced exe bundles everything.
+PyQt5>=5.15.0
+PyQtWebEngine>=5.15.0
+websocket-client>=1.6.0
