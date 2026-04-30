@@ -16,61 +16,70 @@
 
 ---
 
-## 🌍 العربيه
+<div dir="rtl" align="right">
 
-### نظره عامه
+## 🌍 العربي
 
-**FiberHome Manager** تطبيق سطح مكتب لإداره ومراقبه راوتر **FiberHome LG6851F**
-(موديم 5G من Quectel RG620T). يستبدل صفحه الرواتر الويب البطيئه بواجهه أصليه
-سريعه — قراءات لحظيه للإشاره، تحكم كامل بالترددات، اختبار سرعه، ومراقبه IP.
+### وش هو؟
 
-### المميزات
+**FiberHome Manager** برنامج كمبيوتر يدير راوتر **FiberHome LG6851F**
+(الموديم 5G من Quectel RG620T). يحط محل صفحه الرواتر `192.168.8.1` اللي
+بطيئه ومالها فايده — ويعطيك واجهه أسرع بكثير: قراءات إشاره لحظيه، تحكم
+بالترددات، تغيير الـ IP، اختبار سرعه، وكل شي تحتاجه بضغطه.
 
-| المنطقه | المحتوى |
-|---|---|
-| **Main** | قراءات لحظيه (RSRP/RSRQ/SINR/RSSI) للـ 4G + 5G · رسوم بيانيه ملوّنه · جدول CA · إحصائيات بيانات · حاله النظام |
-| **Band + Cell** | قفل ترددات LTE/NR متعدّد · قفل برج محدّد عبر ARFCN+PCI · منع تعارض تلقائي |
-| **Advance** | وضع طيران لحظي · Network Mode + 5G Option · Roaming · Carrier Aggregation · هوائي 5G NR خارجي · SMS · VoLTE · حدود البيانات اليومي/الشهري |
-| **Settings** | LAN/IPv4 · Wi-Fi (SSID-1/2) · Firewall · ALG + UPnP · TR-069/ACS · تغيير كلمه المشرف · Reboot/Factory Reset |
-| **IP Scan** | مراقبه WAN/Public IP لحظياً · تغيير IP عبر airplane mode · Speed Test مخفي عبر Fast.com · IP Pinning بأنماط · جدول إحصائيات |
-| **AT Command** | إرسال أوامر AT خام للموديم + 11 أمر جاهز (ATI, AT+CSQ, AT+QENG, ...) |
+### وش يسوي؟
 
-**ميزات إضافيه**:
-- 🌗 ثلاثه ثيمات: Light · Dark (Tokyo Night) · Aurora — تبديل فوري
-- 🌐 لغتان: English / العربيه — مع RTL تلقائي
-- 🔐 حفظ بيانات الدخول (تسجيل دخول تلقائي)
-- 📋 سجلّات تشغيل مدوّره (لتشخيص المشاكل)
-- ✅ فحص نظام أوّلي قبل التشغيل
-- 📊 صفحه Main أفقيه احترافيه — تتسع على شاشه 720p
+<table dir="rtl">
+<tr><th>الصفحه</th><th>المحتوى</th></tr>
+<tr><td><b>Main</b></td><td>قراءات لحظيه (RSRP/RSRQ/SINR/RSSI) للـ 4G والـ 5G · رسوم بيانيه ملوّنه · جدول CA · إحصائيات الانترنت · حاله الجهاز</td></tr>
+<tr><td><b>Band + Cell</b></td><td>قفل ترددات LTE/NR متعدّده · قفل برج محدّد بـ ARFCN و PCI · يمنع التعارض بينها تلقائي</td></tr>
+<tr><td><b>Advance</b></td><td>وضع الطيران بضغطه · Network Mode + 5G Option · التجوال · Carrier Aggregation · هوائي 5G خارجي · SMS · VoLTE · حد بيانات يومي/شهري</td></tr>
+<tr><td><b>Settings</b></td><td>LAN/IPv4 · Wi-Fi (SSID-1/2) · Firewall · ALG + UPnP · TR-069/ACS · تغيير باسوورد المشرف · إعاده تشغيل / Factory Reset</td></tr>
+<tr><td><b>IP Scan</b></td><td>مراقبه WAN و Public IP لحظياً · تغيير الـ IP عن طريق وضع الطيران · Speed Test مخفي يجيب الأرقام من Fast.com · IP Pinning بأنماط · جدول السرعات</td></tr>
+<tr><td><b>AT Command</b></td><td>ترسل أوامر AT للموديم مباشره + 11 أمر جاهز (ATI, AT+CSQ, AT+QENG, ...)</td></tr>
+</table>
 
-### المتطلبات
+**فوق هذا كله**:
+- 🌗 ثلاث ثيمات: Light · Dark (Tokyo Night) · Aurora — تبديل لحظي
+- 🌐 لغتين: عربي / إنجليزي — مع RTL تلقائي
+- 🔐 يحفظ بيانات الدخول ويفتح تلقائي مره ثانيه
+- 📋 يسجّل كل خطوه في ملف log عشان لو صار شي تعرف وش حصل
+- ✅ فحص للنظام أول مره (يتأكد إن كل شي تمام)
+- 📊 الواجهه الرئيسيه أفقيه — تشتغل على شاشه 720p بدون مشاكل
 
-| المتطلّب | للمستخدم النهائي | للمطوّر/البناء |
-|---|---|---|
-| Windows 10 / 11 (x64) | ✅ | ✅ |
-| Microsoft Visual C++ 2015–2022 Redistributable | ✅ (الـ Preflight يحمّله تلقائياً) | ✅ |
-| اتصال LAN/Wi-Fi مع الرواتر | ✅ | — |
-| Python 3.10+ | ❌ غير مطلوب | ✅ |
-| PyQt5 / PyQtWebEngine / websocket-client | ❌ مدمج في الـ exe | يثبّتها `build.bat` |
-| متصفّح (Edge/Chrome) | ❌ غير مطلوب — Qt يحمل Chromium | — |
+### تشتغل على وش؟
 
-### البناء بضغطه واحده
+<table dir="rtl">
+<tr><th>المتطلّب</th><th>المستخدم العادي</th><th>اللي يبني الكود</th></tr>
+<tr><td>Windows 10 / 11 (x64)</td><td>✅</td><td>✅</td></tr>
+<tr><td>Microsoft Visual C++ 2015–2022 Redistributable</td><td>✅ (الـ Preflight ينزّله تلقائي لو ناقص)</td><td>✅</td></tr>
+<tr><td>متصل بالرواتر (LAN أو Wi-Fi)</td><td>✅</td><td>—</td></tr>
+<tr><td>Python 3.10+</td><td>❌ ما تحتاجه</td><td>✅</td></tr>
+<tr><td>PyQt5 / PyQtWebEngine / websocket-client</td><td>❌ كله جوّه الـ exe</td><td>يثبّتها <code>build.bat</code></td></tr>
+<tr><td>متصفّح (Edge/Chrome)</td><td>❌ ما تحتاجه — Qt جايب Chromium معاه</td><td>—</td></tr>
+</table>
+
+### كيف تبني الـ exe؟
+
+دبل-كليك على:
 
 ```cmd
 build.bat
 ```
 
-السكربت يفحص بايثون + pip + الملفات + المكتبات + يبني الـ exe — كل ذلك تلقائياً.
+السكربت يتحقق من بايثون + pip + الملفات + المكتبات + يبني الـ exe — كل شي تلقائي.
 
-النتيجه في `dist\FiberHome Manager - Beta\` — انسخ المجلّد كاملاً للتوزيع (~266 MB لأنه يحتوي على Chromium مدمج).
+النتيجه في `dist\FiberHome Manager - Beta\` — انسخ المجلّد كله للتوزيع (~266 MB لأنه ضامّن Chromium جوّاه).
 
-### السكربت اليدوي (بديل)
+### يدوي (لو ما اشتغل السكربت)
 
 ```cmd
 pip install -r requirements.txt
 pip install pyinstaller
 pyinstaller FiberHomeManager.spec --noconfirm
 ```
+
+</div>
 
 ---
 
